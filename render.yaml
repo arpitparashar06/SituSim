@@ -1,0 +1,29 @@
+# Render blueprint for SituSim: one always-on web service running one Python process.
+# The whole exercise lives in that one process, so never scale it past one instance.
+#
+# Free plan notes:
+# - The service sleeps after 15 minutes with nobody connected and takes about a minute to wake.
+#   During an exercise the open connections keep it awake.
+# - Local files are wiped on every restart, so set DATABASE_URL to a free Postgres database
+#   (for example Neon). The event log is copied there and loaded back on start-up,
+#   so past reviews survive. Without it the service still works; history just resets.
+services:
+  - type: web
+    name: situsim
+    runtime: python
+    plan: free
+    region: singapore              # closest Render region to India; can't be changed later
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    healthCheckPath: /api/info     # public; /api/state needs the instructor passcode
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      # Asked for when you create the service from this blueprint:
+      - key: INSTRUCTOR_PASSCODE   # locks the instructor console; pick something you can type
+        sync: false
+      - key: DATABASE_URL          # Postgres connection string from Neon (postgresql://...)
+        sync: false
+      # Optional AI summary in the review.
+      - key: ANTHROPIC_API_KEY
+        sync: false

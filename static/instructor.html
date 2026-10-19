@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SituSim instructor</title>
+  <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/netgraph.css">
+  <link rel="stylesheet" href="/static/instructor.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#141414"/><circle cx="9.5" cy="16" r="4.2" fill="#faf6ea"/><circle cx="18" cy="16" r="2.8" fill="#ff5a1f"/><circle cx="24.6" cy="16" r="1.9" fill="#ff5a1f" opacity="0.5"/></svg>
+      SituSim
+    </a>
+    <span class="context"><span id="scenarioName"></span>, instructor</span>
+    <span class="spacer"></span>
+    <span class="pill READY" id="status"><span class="dot"></span><span id="statusText">Connecting</span></span>
+    <span class="clock" id="clock">T+00:00</span>
+    <div class="controls">
+      <button class="btn signal" id="btnStart" type="button">Start</button>
+      <button class="btn quiet" id="btnPause" type="button">Pause</button>
+      <button class="btn quiet" id="btnResume" type="button">Resume</button>
+      <button class="btn quiet" id="btnEnd" type="button">End</button>
+      <button class="btn ghost" id="btnReset" type="button">New session</button>
+      <label class="speed"><span>Speed</span>
+        <select id="speed">
+          <option value="1">1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+          <option value="8">8×</option>
+        </select>
+      </label>
+      <a class="btn" id="btnAar" href="/aar" target="_blank" rel="noopener">Open review</a>
+    </div>
+  </header>
+
+  <!-- The scenario as a timeline: where the exercise is, and what comes next -->
+  <div class="rail" aria-label="Exercise timeline">
+    <span class="rail-end data">00:00</span>
+    <div class="rail-track" id="railTrack">
+      <div class="rail-fill" id="railFill"></div>
+      <div id="railTicks"></div>
+      <div class="rail-now" id="railNow"></div>
+    </div>
+    <span class="rail-end data" id="railEnd">15:00</span>
+    <ul class="rail-key">
+      <li><i class="tick REPORT"></i>Report</li>
+      <li><i class="tick LINK"></i>Network event</li>
+      <li><i class="tick DECISION_POINT"></i>Decision point</li>
+    </ul>
+  </div>
+
+  <main class="console">
+   <div class="main-col">
+    <!-- The network: the centrepiece -->
+    <section class="sheet net-sheet">
+      <div class="net-toolbar">
+        <div class="tool">
+          <span class="tool-label">Fog</span>
+          <span class="seg" id="fogSeg"></span>
+        </div>
+        <label class="switch"><input type="checkbox" id="director"><span class="knob"></span><span>Fog Director</span></label>
+        <label class="switch"><input type="checkbox" id="df"><span class="knob"></span><span>Enemy direction finding</span></label>
+        <span class="spacer"></span>
+        <span class="muted small">Click a trainee or a source to jam it</span>
+      </div>
+      <div class="net-wrap">
+        <svg class="netgraph" id="graph" role="img" aria-label="Live network: report sources on the left, trainees on the right, messages in flight along the links"></svg>
+        <div class="inspector hidden" id="inspector" role="dialog" aria-label="Change a link"></div>
+      </div>
+      <div class="net-foot">
+        <ul class="legend-row">
+          <li><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#2f6bff" stroke="#141414" stroke-width="1.5"/></svg>Report</li>
+          <li><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#ff5a1f" stroke="#141414" stroke-width="1.5"/></svg>Team radio</li>
+          <li><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#fffdf7" stroke="#2f6bff" stroke-width="2.4"/></svg>Relay</li>
+          <li><svg width="14" height="14" aria-hidden="true"><rect x="2.5" y="2.5" width="9" height="9" rx="2" fill="#141414"/></svg>Runner</li>
+          <li><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#fffdf7" stroke="#e5342b" stroke-width="2.4"/></svg>Held at a cut link</li>
+          <li><svg width="22" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#ff5a1f" stroke-width="2.5" stroke-dasharray="20 40" transform="rotate(-90 7 7)"/></svg>Ring = detectability</li>
+        </ul>
+        <span class="muted small data" id="counts"></span>
+      </div>
+    </section>
+
+    <section class="sheet matrix-sheet">
+      <div class="sheet-head">
+        <h2>Who has what</h2>
+        <span class="legend" id="matrixLegend"></span>
+      </div>
+      <div class="matrix-wrap">
+        <table class="matrix" id="matrix">
+          <thead><tr><th>Report</th><th>Ground lead</th><th>Air / ISR</th><th>Cyber / EW</th><th>Comms</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="tools-row">
+    <section class="sheet inject-sheet">
+      <h2>Inject</h2>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab on" data-tab="tabReport" role="tab">Report</button>
+        <button type="button" class="tab" data-tab="tabConflict" role="tab">Contradiction</button>
+        <button type="button" class="tab" data-tab="tabDecision" role="tab">Decision point</button>
+        <button type="button" class="tab" data-tab="tabProbe" role="tab">Freeze probe</button>
+      </div>
+
+      <form class="tab-body" id="tabReport">
+        <label class="field" for="repText">What the report says</label>
+        <textarea id="repText" rows="2" placeholder="e.g. Second group seen near F6"></textarea>
+        <div class="two">
+          <label class="field" for="repSender">From<input type="text" id="repSender" value="OP-North"></label>
+          <label class="field" for="repGrid">Grid<input type="text" id="repGrid" value="F6" maxlength="3"></label>
+        </div>
+        <div class="two">
+          <label class="field" for="repQuestion">Bears on
+            <select id="repQuestion"><option value="">No key question</option></select></label>
+          <label class="field" for="repDirection">Points to
+            <select id="repDirection"><option value="yes">Yes</option><option value="no">No</option></select></label>
+        </div>
+        <div class="two">
+          <label class="field" for="repDomain">Domain
+            <select id="repDomain"><option>LAND</option><option>AIR</option><option>CYBER</option><option>EW</option></select></label>
+          <label class="field" for="repTruth">Truth
+            <select id="repTruth"><option value="true">True</option><option value="false">False (deception)</option></select></label>
+        </div>
+        <fieldset class="plain"><legend>Send to</legend><div class="role-checks" data-name="repTo"></div></fieldset>
+        <label class="check"><input type="checkbox" id="repCritical"> Critical report</label>
+        <div class="row-end"><button class="btn signal" type="submit">Send report</button></div>
+      </form>
+
+      <form class="tab-body hidden" id="tabConflict">
+        <label class="field" for="conTarget">Contradict which report</label>
+        <select id="conTarget"></select>
+        <label class="field" for="conText">What the contradicting report says</label>
+        <textarea id="conText" rows="2" placeholder="Leave empty to use a prepared or simple denial"></textarea>
+        <label class="field" for="conSender">Apparent sender<input type="text" id="conSender" placeholder="e.g. Patrol-1"></label>
+        <fieldset class="plain"><legend>Send to</legend><div class="role-checks" data-name="conTo"></div></fieldset>
+        <div class="row-end"><button class="btn signal" type="submit">Send contradiction</button></div>
+      </form>
+
+      <form class="tab-body hidden" id="tabDecision">
+        <label class="field" for="decPrompt">Question</label>
+        <input type="text" id="decPrompt" placeholder="e.g. Second group near F6. Change route?">
+        <label class="field" for="decOptions">Options, one per line</label>
+        <textarea id="decOptions" rows="3">Change to the other route&#10;Keep the current route&#10;Hold and verify</textarea>
+        <label class="field" for="decWindow">Decision window (seconds)<input type="number" id="decWindow" value="90" min="15" max="600"></label>
+        <fieldset class="plain"><legend>Who decides</legend><div class="role-checks" data-name="decRoles"></div></fieldset>
+        <div class="row-end"><button class="btn signal" type="submit">Open decision point</button></div>
+      </form>
+
+      <form class="tab-body hidden" id="tabProbe">
+        <p class="small muted">Stops the clock and fogs every trainee screen while they answer a few questions about the situation. Answers are scored against the truth and against what each trainee had.</p>
+        <label class="field" for="probeId">Probe</label>
+        <select id="probeId"></select>
+        <p class="small" id="probeState"></p>
+        <div class="row-end">
+          <button class="btn quiet" type="button" id="probeEnd">End probe</button>
+          <button class="btn signal" type="submit">Freeze and ask</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="sheet">
+      <div class="sheet-head"><h2>Scenario script</h2><span class="muted small">Runs by itself</span></div>
+      <ol class="script" id="script"></ol>
+    </section>
+
+    <section class="sheet terminal">
+      <div class="sheet-head"><h2>Event log</h2><span class="muted small data" id="fingerprint"></span></div>
+      <ol class="log" id="log"></ol>
+    </section>
+
+    </div>
+   </div>
+   <div class="right-col">
+    <!-- What each trainee believes, against the shadow analyst and the truth -->
+    <section class="sheet picture-sheet">
+      <div class="sheet-head">
+        <h2>Live picture</h2>
+        <span class="muted small">Read, shadow analyst, truth</span>
+      </div>
+      <div id="picture"></div>
+      <ul class="legend-row small">
+        <li><span class="mk read"></span>Their read</li>
+        <li><span class="mk shadow"></span>What their reports support</li>
+        <li><span class="mk truth"></span>Truth</li>
+      </ul>
+    </section>
+
+    <div class="side-col">
+      <section class="sheet">
+        <div class="sheet-head"><h2>Contradictions</h2><span class="muted small" id="conflictCount"></span></div>
+        <div id="conflicts"></div>
+      </section>
+      <section class="sheet">
+        <div class="sheet-head"><h2>Decisions</h2><span class="muted small" id="dpLine"></span></div>
+        <div id="decisions"><p class="muted small">Decisions appear here the moment they are submitted.</p></div>
+      </section>
+    </div>
+
+    <section class="sheet trainees-sheet">
+      <div class="sheet-head"><h2>Trainees</h2><span class="muted small">Same Wi-Fi or hotspot</span></div>
+      <p class="join-url data" id="joinUrl"></p>
+      <ul class="people" id="people"></ul>
+    </section>
+
+   </div>
+    <details class="sheet settings">
+      <summary><h2>Settings</h2><span class="muted small" id="configState"></span></summary>
+      <form id="configForm">
+        <div class="sliders">
+          <label class="slider">Relay delay <output id="o_relay_delay"></output>
+            <input type="range" id="relay_delay" min="5" max="120" step="1"></label>
+          <label class="slider">Runner delay <output id="o_runner_delay"></output>
+            <input type="range" id="runner_delay" min="30" max="300" step="10"></label>
+          <label class="slider">Detectability that gets you located <output id="o_located_threshold"></output>
+            <input type="range" id="located_threshold" min="30" max="200" step="5"></label>
+          <label class="slider">Off the net after being located <output id="o_located_penalty"></output>
+            <input type="range" id="located_penalty" min="15" max="180" step="5"></label>
+          <label class="slider">Show as "Delayed" after <output id="o_delayed_label_after"></output>
+            <input type="range" id="delayed_label_after" min="5" max="120" step="1"></label>
+          <label class="slider">Counts as stale after <output id="o_stale_after"></output>
+            <input type="range" id="stale_after" min="30" max="600" step="10"></label>
+          <label class="slider">Exercise length <output id="o_duration"></output>
+            <input type="range" id="duration_in" min="120" max="1800" step="30"></label>
+        </div>
+        <label class="field" for="seed">Random seed <span class="muted small">(same seed and same actions give the same delays and losses)</span></label>
+        <input type="number" id="seed">
+        <label class="check"><input type="checkbox" id="show_degraded"> Tell trainees when their radio is degraded</label>
+        <div class="row-end"><button class="btn signal" type="submit">Apply settings</button></div>
+      </form>
+    </details>
+  </main>
+
+  <!-- Only shown on a hosted copy that has an instructor passcode -->
+  <div class="modal hidden" id="passcodeModal" role="dialog" aria-modal="true" aria-labelledby="passcodeTitle">
+    <form class="modal-box" id="passcodeForm">
+      <h2 id="passcodeTitle">Instructor passcode</h2>
+      <p class="muted">The console can change the exercise and shows the ground truth, so it is locked on this hosted copy. Trainees join from the home page without a passcode.</p>
+      <label class="field" for="passcodeInput">Passcode</label>
+      <input type="password" id="passcodeInput" autocomplete="current-password" required>
+      <p class="passcode-error" id="passcodeError" role="alert"></p>
+      <div class="modal-actions">
+        <a class="btn quiet" href="/">Back to start</a>
+        <button class="btn signal" type="submit">Unlock the console</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="/static/netgraph.js"></script>
+  <script src="/static/instructor.js"></script>
+</body>
+</html>

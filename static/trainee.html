@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SituSim trainee</title>
+  <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/trainee.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#141414"/><circle cx="9.5" cy="16" r="4.2" fill="#faf6ea"/><circle cx="18" cy="16" r="2.8" fill="#ff5a1f"/><circle cx="24.6" cy="16" r="1.9" fill="#ff5a1f" opacity="0.5"/></svg>
+      SituSim
+    </a>
+    <span class="context" id="exerciseName"></span>
+    <span class="spacer"></span>
+    <span class="who" id="who"></span>
+    <span class="pill UP" id="netPill"><span class="dot"></span><span id="netText">Radio up</span></span>
+    <div class="meter" id="meter" title="Every radio message raises your detectability. If enemy direction finding is active and it reaches the line, you are located and lose your radio for a minute.">
+      <span class="meter-label">Detectability</span>
+      <span class="meter-track"><i id="meterFill"></i><b id="meterLine"></b></span>
+    </div>
+    <span class="pill READY" id="status"><span class="dot"></span><span id="statusText">Connecting</span></span>
+    <span class="clock" id="clock">T+00:00</span>
+  </header>
+  <div class="banner waiting" id="banner">Connecting to the exercise…</div>
+
+  <main class="grid">
+    <!-- Left: what you think, and where -->
+    <section class="col-a">
+      <div class="sheet reads">
+        <div class="sheet-head">
+          <h2>Your read</h2>
+          <span class="muted small">How likely is each, right now?</span>
+        </div>
+        <div id="reads"></div>
+        <div class="share-row">
+          <button class="btn quiet small" type="button" id="shareRead">Share my read</button>
+          <span class="muted small" id="shareHint">Goes to everyone over your chosen channel</span>
+        </div>
+      </div>
+
+      <div class="sheet map-sheet">
+        <div class="sheet-head">
+          <h2 id="areaName">Training area</h2>
+          <span class="muted small">Fog grows where your information is old</span>
+        </div>
+        <svg id="map" viewBox="0 0 440 440" role="img" aria-label="Map of the fictional training area. Areas with old or no information are fogged."></svg>
+        <ul class="map-key">
+          <li><span class="key-dot ok"></span>Fresh report</li>
+          <li><span class="key-dot late"></span>Delayed</li>
+          <li><span class="key-dot conflict"></span>Conflicting</li>
+          <li><span class="key-fog"></span>Old or no information</li>
+        </ul>
+      </div>
+
+      <details class="sheet brief">
+        <summary><h2>Mission and your role</h2></summary>
+        <p id="mission"></p>
+        <h3>Commander's intent</h3>
+        <p id="intent"></p>
+        <h3 id="roleTitle">Your role</h3>
+        <p id="roleBrief"></p>
+        <p class="small muted" id="disclaimer"></p>
+      </details>
+    </section>
+
+    <!-- Middle: what reaches you -->
+    <section class="col-b">
+      <div class="sheet feed-sheet">
+        <div class="sheet-head">
+          <h2>Incoming</h2>
+          <span class="muted small data" id="feedCount"></span>
+        </div>
+        <p class="hint">Reports fog over as they age. Tick the ones a decision rests on, and grade how far you trust them.</p>
+        <div id="feed"></div>
+      </div>
+    </section>
+
+    <!-- Right: decide and talk -->
+    <section class="col-c">
+      <div class="sheet decision" id="decisionPanel">
+        <h2>Decision</h2>
+        <p class="muted">No decision is waiting. Keep your read up to date.</p>
+      </div>
+
+      <div class="sheet composer">
+        <div class="sheet-head">
+          <h2>Reach the team</h2>
+        </div>
+        <div class="channels" id="channels" role="radiogroup" aria-label="Channel"></div>
+        <form id="chatForm">
+          <div id="textMode">
+            <label class="field" for="chatTo">To</label>
+            <select id="chatTo"></select>
+            <label class="field" for="chatText">Message</label>
+            <textarea id="chatText" rows="2" maxlength="500" placeholder="Short and clear, e.g. 'R4 and R5 disagree on B-2, confirm?'"></textarea>
+            <div class="send-row">
+              <span class="muted small" id="costHint"></span>
+              <button class="btn signal" type="submit" id="sendBtn">Send</button>
+            </div>
+          </div>
+          <div id="flareMode" class="hidden">
+            <p class="muted small">A flare reaches everyone almost at once, but it can only say one of these, and the other side sees it too.</p>
+            <div class="flares" id="flares"></div>
+          </div>
+        </form>
+        <h3>Sent by you</h3>
+        <ul class="sent" id="sent"><li class="muted">Nothing sent yet.</li></ul>
+      </div>
+
+      <div class="sheet flat team">
+        <h2>Team</h2>
+        <ul class="roster" id="roster"></ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- Pass a report on -->
+  <div class="modal hidden" id="forwardModal" role="dialog" aria-modal="true" aria-labelledby="forwardTitle">
+    <div class="modal-box">
+      <h2 id="forwardTitle">Pass on a report</h2>
+      <p class="muted" id="forwardWhat"></p>
+      <fieldset class="plain">
+        <legend>Send to</legend>
+        <div id="forwardTargets"></div>
+      </fieldset>
+      <label class="field" for="forwardNote">Note (optional)</label>
+      <input type="text" id="forwardNote" maxlength="300" placeholder="e.g. Conflicts with R5, treat R5 as suspect">
+      <p class="small muted" id="forwardChannel"></p>
+      <div class="modal-actions">
+        <button class="btn quiet" type="button" id="forwardCancel">Cancel</button>
+        <button class="btn signal" type="button" id="forwardSend">Pass it on</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Freeze probe: the screen is fogged while the trainee answers -->
+  <div class="modal fog hidden" id="probeModal" role="dialog" aria-modal="true" aria-labelledby="probeTitle">
+    <div class="modal-box probe-box">
+      <h2 id="probeTitle">Freeze</h2>
+      <p>The clock has stopped and your screen is hidden. Answer from what you know right now.</p>
+      <form id="probeForm"></form>
+    </div>
+  </div>
+
+  <div class="modal fog hidden" id="endedModal" role="dialog" aria-modal="true" aria-labelledby="endedTitle">
+    <div class="modal-box">
+      <h2 id="endedTitle">The exercise has ended</h2>
+      <p>Your reads, decisions and the reports you had at each moment are saved. Your instructor will open the review.</p>
+      <div class="modal-actions"><a class="btn quiet" href="/">Back to start</a></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="/static/trainee.js"></script>
+</body>
+</html>

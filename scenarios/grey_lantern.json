@@ -1,0 +1,289 @@
+{
+  "id": "grey_lantern",
+  "name": "Exercise GREY LANTERN",
+  "area": "Kestrel Valley (fictional training area)",
+  "disclaimer": "Fictional training scenario for decision-making education. All places, groups and events are invented.",
+  "duration": 900,
+  "mission": "Blue team secures a crossing over the Kestrel river so a simulated relief convoy can reach the relief point at E1 by T+15:00.",
+  "intent": "The convoy crosses safely by T+15:00. Avoid an unnecessary confrontation. If Bridge B-2 is unusable, use Ford F-1 even though it is slower.",
+  "roles": {
+    "GTL": {
+      "title": "Ground Team Lead",
+      "short": "Ground lead",
+      "brief": "You lead Blue team on the ground and make the team's final calls. You rely on the others for most of your picture."
+    },
+    "ISR": {
+      "title": "Air / ISR Monitor",
+      "short": "Air / ISR",
+      "brief": "You watch the simulated UAV and observation post feeds. You see the ground from above, but your feed can go stale or offline."
+    },
+    "EW": {
+      "title": "Cyber / EW Officer",
+      "short": "Cyber / EW",
+      "brief": "You watch the spectrum and the team's networks. You may spot jamming or spoofed traffic before anyone else does."
+    },
+    "COMMS": {
+      "title": "Comms Coordinator",
+      "short": "Comms",
+      "brief": "You keep the team talking. Anyone can route messages through your relay, which gets past jamming, but every relayed message is transmitted from your position."
+    }
+  },
+  "questions": [
+    {
+      "q_id": "Q1",
+      "text": "Is Bridge B-2 usable right now?",
+      "short": "Bridge B-2 usable",
+      "yes": "Usable",
+      "no": "Not usable",
+      "prior": 0.6,
+      "half_life": 240,
+      "truth": [{"from": 0, "value": true}, {"from": 195, "value": false}]
+    },
+    {
+      "q_id": "Q2",
+      "text": "Can Patrol-2's reports be trusted?",
+      "short": "Patrol-2 trustworthy",
+      "yes": "Trustworthy",
+      "no": "Not trustworthy",
+      "prior": 0.8,
+      "half_life": 600,
+      "truth": [{"from": 0, "value": true}, {"from": 180, "value": false}]
+    },
+    {
+      "q_id": "Q3",
+      "text": "Is Ford F-1 passable for the convoy?",
+      "short": "Ford F-1 passable",
+      "yes": "Passable",
+      "no": "Not passable",
+      "prior": 0.5,
+      "half_life": 400,
+      "truth": [{"from": 0, "value": true}]
+    }
+  ],
+  "sources": {
+    "ISR-UAV": {"weight": 0.9, "grade": "B"},
+    "OP-North": {"weight": 0.8, "grade": "B"},
+    "EW-Sensor": {"weight": 0.8, "grade": "C"},
+    "CYBER-Desk": {"weight": 0.9, "grade": "B"},
+    "Patrol-2": {"weight": 0.7, "grade": "C"},
+    "Patrol-1": {"weight": 0.5, "grade": "C"},
+    "Patrol-3": {"weight": 0.5, "grade": "C"}
+  },
+  "flares": ["Hold position", "Need support", "All clear, move"],
+  "map": {
+    "size": 8,
+    "river": ["A3", "B4", "C4", "D4", "E5", "F6", "G6", "H7"],
+    "main_road": ["C8", "C7", "C6", "D5", "D4", "D3", "D2", "E1"],
+    "alt_road": ["C7", "D7", "E7", "F7", "F6", "F5", "F4", "E3", "E2", "E1"],
+    "features": [
+      {"grid": "D4", "name": "Bridge B-2", "kind": "bridge"},
+      {"grid": "F6", "name": "Ford F-1", "kind": "ford"},
+      {"grid": "C7", "name": "Blue team", "kind": "friendly"},
+      {"grid": "C2", "name": "OP-North", "kind": "op"},
+      {"grid": "E1", "name": "Relief point", "kind": "objective"}
+    ]
+  },
+  "sensors": ["ISR-UAV", "OP-North", "EW-Sensor", "CYBER-Desk", "Patrol-2"],
+  "injects": [
+    {
+      "at": 10, "action": "REPORT", "report_id": "R1",
+      "sender": "ISR-UAV", "domain": "AIR", "grid": "D4",
+      "text": "Bridge B-2 clear. No activity observed on or near the bridge.",
+      "truth": true, "to_roles": ["ISR", "GTL"],
+      "evidence": {"Q1": 1.5},
+      "contradiction": {"sender": "Patrol-1", "grid": "D4", "text": "Vehicles seen parked at the north end of Bridge B-2.", "evidence": {"Q1": -1.0}}
+    },
+    {
+      "at": 60, "action": "REPORT", "report_id": "R2",
+      "sender": "OP-North", "domain": "LAND", "grid": "C3",
+      "text": "Unidentified group of about 6 moving south toward Bridge B-2.",
+      "truth": true, "to_roles": ["GTL", "ISR"], "critical": true, "needed_by": ["GTL"],
+      "evidence": {"Q1": -0.8},
+      "contradiction": {"sender": "Patrol-1", "grid": "C3", "text": "No movement seen around C3 in the last 10 minutes.", "evidence": {"Q1": 0.4}}
+    },
+    {
+      "at": 90, "action": "LINK", "role": "GTL", "state": "DEGRADED",
+      "note": "Simulated EW activity starts degrading the ground team's radio net"
+    },
+    {
+      "at": 120, "action": "REPORT", "report_id": "R3",
+      "sender": "EW-Sensor", "domain": "EW", "grid": "C3",
+      "text": "Unusual emissions near C3. Possible jamming and direction-finding activity.",
+      "truth": true, "to_roles": ["EW", "COMMS"], "critical": true, "needed_by": ["GTL"]
+    },
+    {
+      "at": 125, "action": "DF", "state": true,
+      "note": "Opposing direction finding becomes active: heavy radio use can now give a position away"
+    },
+    {
+      "at": 150, "action": "DECISION_POINT", "dp_id": "DP1",
+      "roles": ["GTL"], "window": 90, "team": false,
+      "prompt": "Blue team is ready to move. Advance to Bridge B-2 now?",
+      "options": [
+        {"id": "VERIFY", "label": "Request verification from ISR before moving"},
+        {"id": "PROCEED", "label": "Advance to B-2 on the current assessment"},
+        {"id": "WAIT", "label": "Hold position and wait for more information"}
+      ],
+      "relevant_reports": ["R1", "R2"],
+      "question": "Q1",
+      "rules": [
+        {"when": {"visible_any": ["R2"]}, "acceptable": ["VERIFY", "WAIT"]},
+        {"when": {"conflict_visible": true}, "acceptable": ["VERIFY", "WAIT"]},
+        {"when": {}, "acceptable": ["PROCEED", "VERIFY"]}
+      ],
+      "best_given_truth": ["VERIFY", "WAIT"],
+      "verify_options": ["VERIFY", "WAIT"]
+    },
+    {
+      "at": 200, "action": "REPORT", "report_id": "R4",
+      "sender": "ISR-UAV", "domain": "AIR", "grid": "D4",
+      "text": "Bridge B-2 now blocked by two vehicles parked across it.",
+      "truth": true, "to_roles": ["ISR"], "conflicts_with": "R5",
+      "critical": true, "needed_by": ["GTL"],
+      "evidence": {"Q1": -2.5}
+    },
+    {
+      "at": 205, "action": "REPORT", "report_id": "R5",
+      "sender": "Patrol-2", "domain": "LAND", "grid": "D4",
+      "text": "Bridge B-2 open. We passed it 2 minutes ago, nothing there.",
+      "truth": false, "to_roles": ["GTL"], "conflicts_with": "R4",
+      "fixed_delay": 5, "no_drop": true,
+      "evidence": {"Q1": 2.0}
+    },
+    {
+      "at": 260, "action": "SENSOR", "sensor": "ISR-UAV", "state": "OFFLINE", "until": 500,
+      "note": "The UAV feed is lost"
+    },
+    {
+      "at": 300, "action": "LINK", "role": "GTL", "state": "DOWN",
+      "note": "The ground team's radio net goes down completely"
+    },
+    {
+      "at": 330, "action": "DECISION_POINT", "dp_id": "DP2",
+      "roles": ["ISR", "COMMS"], "window": 60, "team": false,
+      "prompt": "The Ground Team Lead has stopped acknowledging traffic. What do you do with critical updates?",
+      "options": [
+        {"id": "RELAY", "label": "Send them through the relay or by runner"},
+        {"id": "WAIT", "label": "Wait for the ground net to recover"},
+        {"id": "RESEND", "label": "Keep resending on the main radio net"}
+      ],
+      "relevant_reports": ["R4", "R3"],
+      "rules": [
+        {"when": {}, "acceptable": ["RELAY"]}
+      ],
+      "best_given_truth": ["RELAY"],
+      "verify_options": []
+    },
+    {
+      "at": 420, "action": "LINK", "role": "GTL", "state": "UP",
+      "note": "The ground net recovers"
+    },
+    {
+      "at": 430, "action": "REPORT", "report_id": "R6",
+      "sender": "CYBER-Desk", "domain": "CYBER", "grid": "-",
+      "text": "Patrol-2's radio net shows signs of spoofed traffic since about T+03:00.",
+      "truth": true, "to_roles": ["EW"], "critical": true, "needed_by": ["GTL"],
+      "evidence": {"Q2": -3.0}, "discredits": "Patrol-2"
+    },
+    {
+      "at": 480, "action": "DECISION_POINT", "dp_id": "DP3",
+      "roles": ["GTL", "ISR", "EW", "COMMS"], "window": 120, "team": true,
+      "prompt": "Team decision: which route should the convoy take?",
+      "options": [
+        {"id": "B2", "label": "Route via Bridge B-2"},
+        {"id": "F1", "label": "Route via Ford F-1"},
+        {"id": "HOLD", "label": "Hold the convoy until the picture is confirmed"}
+      ],
+      "relevant_reports": ["R4", "R5", "R6"],
+      "question": "Q1",
+      "rules": [
+        {"when": {"visible_any": ["R4", "R6"]}, "acceptable": ["F1", "HOLD"]},
+        {"when": {"conflict_visible": true}, "acceptable": ["F1", "HOLD"]},
+        {"when": {}, "acceptable": ["B2", "HOLD"]}
+      ],
+      "best_given_truth": ["F1"],
+      "verify_options": ["HOLD"]
+    },
+    {
+      "at": 560, "action": "REPORT", "report_id": "R7",
+      "sender": "ISR-UAV", "domain": "AIR", "grid": "F6",
+      "text": "Ford F-1 passable. No activity on either bank.",
+      "truth": true, "to_roles": ["ISR", "GTL"], "critical": true, "needed_by": ["GTL"],
+      "evidence": {"Q3": 2.5},
+      "contradiction": {"sender": "Patrol-2", "grid": "F6", "text": "Ford F-1 flooded, water too deep for vehicles.", "evidence": {"Q3": -2.0}}
+    },
+    {
+      "at": 640, "action": "REPORT", "report_id": "R8",
+      "sender": "OP-North", "domain": "LAND", "grid": "D4",
+      "text": "The group at Bridge B-2 appears to be setting up a checkpoint.",
+      "truth": true, "to_roles": ["GTL", "ISR"],
+      "evidence": {"Q1": -1.5}
+    },
+    {
+      "at": 700, "action": "DECISION_POINT", "dp_id": "DP4",
+      "roles": ["GTL"], "window": 90, "team": false,
+      "prompt": "The convoy is at the route junction. Commit it now?",
+      "options": [
+        {"id": "COMMIT", "label": "Commit the convoy to the chosen route now"},
+        {"id": "DELAY", "label": "Delay 5 minutes to confirm the route"}
+      ],
+      "relevant_reports": ["R7", "R8"],
+      "question": "Q3",
+      "rules": [
+        {"when": {"visible_any": ["R7"]}, "acceptable": ["COMMIT"]},
+        {"when": {}, "acceptable": ["DELAY", "COMMIT"]}
+      ],
+      "best_given_truth": ["COMMIT"],
+      "verify_options": ["DELAY"]
+    }
+  ],
+  "probes": [
+    {
+      "probe_id": "P1",
+      "label": "Freeze 1: the bridge picture (use around T+06:00)",
+      "questions": [
+        {
+          "q_id": "P1Q1", "level": 1,
+          "text": "Where was the unidentified group last reported?",
+          "options": ["Near C3, moving toward Bridge B-2", "Near Ford F-1", "No group has been reported", "I don't know"],
+          "answer": "Near C3, moving toward Bridge B-2",
+          "evidence": ["R2"]
+        },
+        {
+          "q_id": "P1Q2", "level": 2,
+          "text": "Is Bridge B-2 usable right now?",
+          "options": ["Yes", "No", "Unclear, the reports conflict", "I don't know"],
+          "answer": "No",
+          "evidence": ["R4"]
+        },
+        {
+          "q_id": "P1Q3", "level": 3,
+          "text": "If the convoy heads for Bridge B-2 in the next 5 minutes, what is most likely?",
+          "options": ["It crosses without trouble", "It is blocked or delayed at the bridge", "I can't tell"],
+          "answer": "It is blocked or delayed at the bridge",
+          "evidence": ["R4", "R2"]
+        }
+      ]
+    },
+    {
+      "probe_id": "P2",
+      "label": "Freeze 2: who to trust (use around T+10:00)",
+      "questions": [
+        {
+          "q_id": "P2Q1", "level": 2,
+          "text": "Can Patrol-2's report about Bridge B-2 be trusted?",
+          "options": ["Yes", "No, it may be spoofed", "I don't know"],
+          "answer": "No, it may be spoofed",
+          "evidence": ["R6"]
+        },
+        {
+          "q_id": "P2Q2", "level": 1,
+          "text": "Which crossing is currently passable?",
+          "options": ["Bridge B-2", "Ford F-1", "Neither", "I don't know"],
+          "answer": "Ford F-1",
+          "evidence": ["R7"]
+        }
+      ]
+    }
+  ]
+}

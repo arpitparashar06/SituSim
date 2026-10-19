@@ -1,0 +1,56 @@
+/* Network picture (home demo and instructor console), drawn like a sketch in blue ink */
+
+.netgraph { width: 100%; height: auto; display: block; user-select: none; overflow: visible; }
+
+.ng-layers text { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; fill: var(--pencil); }
+
+.ng-edge { fill: none; stroke: var(--pen); stroke-width: 1.8; stroke-linecap: round; opacity: 0.5; transition: opacity 0.3s, stroke 0.3s; }
+.ng-edge.team { stroke: var(--ink); opacity: 0.28; stroke-width: 2; }
+.ng-edge.DEGRADED { stroke: var(--marker); opacity: 0.85; stroke-dasharray: 7 6; }
+.ng-edge.DOWN { stroke: var(--redpen); opacity: 0.8; stroke-dasharray: 1 7; stroke-width: 2.6; }
+.ng-edge.OFF { stroke: var(--pencil); opacity: 0.25; stroke-dasharray: 2 7; }
+
+.ng-node { cursor: pointer; outline: none; }
+.ng-node.source rect { fill: var(--white); stroke: var(--ink); stroke-width: 2; transition: fill 0.15s; }
+.ng-node.source text { font-family: var(--font-mono); font-size: 13px; font-weight: 700; fill: var(--ink); }
+.ng-node.source .until { fill: var(--redpen); font-variant-numeric: tabular-nums; }
+.ng-node.source .lamp { fill: var(--mint); stroke: var(--ink); stroke-width: 1.5; }
+.ng-node.source.OFFLINE rect { fill: var(--paper-2); stroke-dasharray: 4 4; }
+.ng-node.source.OFFLINE text { fill: var(--pencil); }
+.ng-node.source.OFFLINE .lamp { fill: var(--redpen); }
+.ng-node.source:hover rect, .ng-node.source.selected rect { fill: var(--highlight); }
+.ng-node:focus-visible rect, .ng-node:focus-visible .body { stroke: var(--pen); stroke-width: 4; }
+
+.ng-node.role .core { transform-box: fill-box; transform-origin: center; transition: transform 0.35s var(--ease-out); }
+.ng-node.role:hover .core, .ng-node.role.selected .core { transform: scale(1.12); }
+.ng-node.role .halo { fill: var(--highlight); opacity: 0; transition: opacity 0.2s; }
+.ng-node.role.selected .halo { opacity: 0.55; }
+.ng-node.role .body { fill: var(--mint); stroke: var(--ink); stroke-width: 2.5; transition: fill 0.25s; }
+.ng-node.role.DEGRADED .body { fill: var(--highlight); stroke-dasharray: 6 4; }
+.ng-node.role.DOWN .body { fill: var(--redpen); }
+.ng-node.role.DOWN .abbr { fill: #fff; }
+.ng-node.role.offline .body { fill: var(--paper-2); }
+.ng-node.role .exposure-track { fill: none; stroke: var(--rule); stroke-width: 4; }
+.ng-node.role .exposure { fill: none; stroke: var(--marker); stroke-width: 4; stroke-linecap: round; transition: stroke-dasharray 0.6s; }
+.ng-node.role .exposure.hot { stroke: var(--redpen); }
+.ng-node.role .abbr { font-family: var(--font-mono); font-size: 13px; font-weight: 700; fill: var(--ink); }
+.ng-node.role .label { font-family: var(--font-hand); font-size: 23px; font-weight: 700; fill: var(--ink); }
+.ng-node.role .sub { font-family: var(--font-mono); font-size: 11.5px; fill: var(--pencil); }
+.ng-node .countdown rect { fill: var(--redpen); stroke: var(--ink); stroke-width: 1.5; }
+.ng-node .countdown text { fill: #fff; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; }
+.ng-node .badge rect { fill: var(--ink); }
+.ng-node .badge text { fill: var(--highlight); font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; }
+
+.ng-packet { fill: var(--pen); stroke: var(--ink); stroke-width: 1.5; }
+.ng-packet.team { fill: var(--marker); }
+.ng-packet.relay { fill: var(--white); stroke: var(--pen); stroke-width: 2.4; }
+.ng-packet.runner { fill: var(--ink); stroke: var(--white); }
+.ng-packet.flare { fill: var(--highlight); stroke: var(--ink); stroke-width: 2; }
+.ng-packet.held { fill: var(--white); stroke: var(--redpen); stroke-width: 2.4; }
+
+.ng-arrive { fill: none; stroke: var(--marker); stroke-width: 2.5; animation: ng-arrive 0.9s ease-out forwards; }
+@keyframes ng-arrive { from { opacity: 0.9; r: 30; } to { opacity: 0; r: 56; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ng-arrive { display: none; }
+}

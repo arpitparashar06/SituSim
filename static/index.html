@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SituSim</title>
+  <meta name="description" content="SituSim: a team decision-making exercise for degraded communications, with a review that separates information gaps from reasoning gaps.">
+  <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+  <link rel="preload" href="/static/fonts/bricolage-grotesque-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/netgraph.css">
+  <link rel="stylesheet" href="/static/home.css">
+</head>
+<body class="home-page">
+  <!-- Once per visit: a terminal "boots" the exercise, then slides away -->
+  <div class="boot screen hidden" id="boot" role="status" aria-live="polite">
+    <div class="boot-inner">
+      <p class="boot-kicker">situsim · exercise notebook</p>
+      <p class="boot-line"></p><p class="boot-line"></p><p class="boot-line"></p><p class="boot-line"></p>
+      <div class="boot-progress"><span class="boot-track"><i id="bootBar"></i></span><span><b id="bootPct">0</b>%</span></div>
+      <p class="boot-skip">esc to skip</p>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="Main">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#141414"/><circle cx="9.5" cy="16" r="4.2" fill="#faf6ea"/><circle cx="18" cy="16" r="2.8" fill="#ff5a1f"/><circle cx="24.6" cy="16" r="1.9" fill="#ff5a1f" opacity="0.5"/></svg>
+      SituSim
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#roles">Roles</a>
+      <a href="#reviews">Reviews</a>
+    </div>
+    <a class="nav-cta" href="/instructor">Instructor console</a>
+  </nav>
+
+  <main>
+    <!-- ===================== Hero ===================== -->
+    <section class="hero" id="hero">
+      <div class="inkgrid" aria-hidden="true"></div>
+      <div class="hero-grid">
+        <div class="hero-text">
+          <div class="hero-fade hero-meta">
+            <p class="nb-label"><b>⎇ <span id="scenarioSlug">grey-lantern</span></b><i>·</i>fictional training area</p>
+            <span class="tape stripe" style="--r: -2deg">decision training · degraded comms</span>
+          </div>
+
+          <h1 class="headline">
+            <span class="mask-line"><span>decide on</span></span>
+            <span class="mask-line"><span><span class="strike hand struck">everything</span> what</span></span>
+            <span class="mask-line"><span><span class="mark">reaches you.</span></span></span>
+          </h1>
+
+          <p class="hero-fade lede">SituSim is a team exercise where reports arrive late, go missing or contradict each other.
+            Four trainees decide against the clock, each with a different picture, and the review replays every choice
+            against what that person could actually see. So it can tell an information gap from a reasoning gap.</p>
+
+          <div class="hero-fade hero-actions">
+            <a class="btn big signal" href="#roles" id="joinCta" style="--r: -1.5deg">Join as a trainee <span aria-hidden="true">→</span></a>
+            <a class="btn big quiet" href="/instructor" style="--r: 1deg">Open the instructor console</a>
+          </div>
+
+          <div class="hero-fade latest">
+            <p class="nb-label">latest review</p>
+            <a class="latest-card" id="latestCard" href="/instructor">
+              <span class="latest-badge" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="#141414" stroke-width="2.5"/><path d="M12 21 L18 27 L29 13" fill="none" stroke="#ff5a1f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="latest-text">
+                <span class="latest-title" id="latestTitle">No exercises yet</span>
+                <span class="latest-meta" id="latestMeta">start the first one from the instructor console</span>
+              </span>
+              <span class="latest-go" aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- The playable network, with an index card taped underneath -->
+        <figure class="hero-fade demo" aria-label="Try it: a small live network">
+          <svg class="netgraph" id="demoGraph" role="img" aria-label="Two sources send reports to four trainees; messages move along the links"></svg>
+          <div class="demo-card" aria-live="polite">
+            <span class="demo-tape" aria-hidden="true"></span>
+            <p class="demo-kicker">sources → radio → four trainees</p>
+            <p class="demo-tag">one report, four pictures</p>
+            <p class="demo-help" id="demoHelp">Click a trainee to cut their radio. Drag the fog and watch their pictures drift apart.</p>
+            <label class="fog-control">
+              <span>fog</span>
+              <input type="range" id="fog" min="0" max="100" value="35" aria-label="How foggy the network is">
+              <output id="fogOut">35%</output>
+            </label>
+            <div class="pictures" id="pictures"></div>
+            <button class="btn small signal send-btn" type="button" id="sendNow"><span aria-hidden="true">▶</span> send a report</button>
+          </div>
+        </figure>
+      </div>
+
+      <span class="sticker fling s1" style="--bg: #ffe85c; --r: -7deg">4 roles · 3 key questions</span>
+      <span class="sticker fling s2" style="--bg: #141414; --fg: #f3eee2; --r: 6deg">same seed, same replay</span>
+      <span class="sticker fling s3" style="--bg: #ff8fb1; --r: -5deg">runs on one laptop</span>
+      <span class="sticker fling s4" style="--bg: #2f6bff; --fg: #fff; --r: 8deg">no headset needed</span>
+
+      <a class="scroll-cue" href="#how">↓ how-it-works.md</a>
+      <div class="perforation hero-perf" aria-hidden="true"></div>
+    </section>
+
+    <!-- ===================== The scenario script, scrolling like a terminal log ===================== -->
+    <div class="log-strip screen" aria-hidden="true">
+      <div class="log-head"><span class="live-dot"></span><span class="log-cmd">$ tail -f scenario.log</span><span class="log-count" id="logCount"></span></div>
+      <div class="log-window"><div class="log-track" id="logTrack"></div></div>
+    </div>
+
+    <!-- ===================== How it works: three folders ===================== -->
+    <section class="how" id="how">
+      <div class="wrap">
+        <div class="how-head">
+          <p class="nb-label"><b>situsim</b><i>/</i><strong>how-it-works.md</strong></p>
+          <p class="hand how-note">click a tab, or wait and they take turns</p>
+        </div>
+
+        <div class="folders" id="folders">
+          <div class="folder-tabs" role="tablist" aria-label="How a session works">
+            <button class="folder-tab on" role="tab" aria-selected="true" data-i="0" style="--tone: #ffe85c">
+              <span class="ft-id">step_01</span><span class="ft-title">the fog</span>
+              <span class="ft-line">The instructor degrades the network, scripted or live.</span>
+              <svg class="ft-ring" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+            </button>
+            <button class="folder-tab" role="tab" aria-selected="false" data-i="1" style="--tone: #9bd7ff">
+              <span class="ft-id">step_02</span><span class="ft-title">the decision</span>
+              <span class="ft-line">Trainees act on whatever reaches them, in time.</span>
+              <svg class="ft-ring" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+            </button>
+            <button class="folder-tab" role="tab" aria-selected="false" data-i="2" style="--tone: #3ae88a">
+              <span class="ft-id">step_03</span><span class="ft-title">the review</span>
+              <span class="ft-line">Every choice is replayed against what that person saw.</span>
+              <svg class="ft-ring" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+            </button>
+          </div>
+
+          <div class="folder-body" id="folderBody" role="tabpanel" style="--tone: #ffe85c">
+            <!-- step 1 -->
+            <div class="fb" data-i="0">
+              <div class="fb-text">
+                <div class="fb-tags"><span class="stamp" style="--r: -6deg; --stamp: #ff5a1f">step 01</span><span class="tape" style="--r: 2deg">scenario engine</span></div>
+                <h2>the fog</h2>
+                <p>Reports from drones, patrols and sensors go out on a schedule. Mid-exercise the network starts to fail: messages slow down, some never arrive, and a second source says the opposite of the first.</p>
+                <p class="hand fb-hand" style="color: #ff5a1f">In practice: the same report reaches four people at four different times, or not at all.</p>
+              </div>
+              <div class="fb-panel">
+                <p class="fb-panel-label">what the instructor can throw at them</p>
+                <div class="chips">
+                  <div class="chip" style="--bg: #ffe85c; --r: -1.5deg"><b>Delay</b><span>radio adds seconds, relay and runner add minutes</span></div>
+                  <div class="chip" style="--bg: #9bd7ff; --r: 1.5deg"><b>Dropout</b><span>lost for good on a bad link</span></div>
+                  <div class="chip" style="--bg: #ff8fb1; --r: 1deg"><b>Contradiction</b><span>a second source says the opposite</span></div>
+                  <div class="chip" style="--bg: #3ae88a; --r: -1deg"><b>Link outage</b><span>one person cut off for a timed spell</span></div>
+                  <div class="chip" style="--bg: #fffdf7; --r: -1.5deg"><b>Direction finding</b><span>talk too much and you get located</span></div>
+                  <div class="chip" style="--bg: #ffb86b; --r: 1.5deg"><b>Fog Director</b><span>thickens the fog when the team copes</span></div>
+                </div>
+              </div>
+            </div>
+            <!-- step 2 -->
+            <div class="fb hidden" data-i="1">
+              <div class="fb-text">
+                <div class="fb-tags"><span class="stamp" style="--r: -6deg; --stamp: #2f6bff">step 02</span><span class="tape blue" style="--r: 2deg">team coordination</span></div>
+                <h2>the decision</h2>
+                <p>Four roles see different slices of the picture. They keep a live read on the key questions, grade how far they trust each source, and pick how to reach each other when the radio is down.</p>
+                <p class="hand fb-hand" style="color: #2f6bff">In practice: the ground lead never gets the report that matters unless someone else passes it on.</p>
+              </div>
+              <div class="fb-panel">
+                <p class="fb-panel-label">what each trainee does, again and again</p>
+                <ol class="path">
+                  <li><span class="path-n">1</span><div><b>read</b><span>slide how likely each key question is, right now</span></div></li>
+                  <li><span class="path-n">2</span><div><b>grade</b><span>source reliability A to F, report credibility 1 to 6</span></div></li>
+                  <li><span class="path-n">3</span><div><b>reach</b><span>radio, relay, runner or flare, each with a cost</span></div></li>
+                  <li><span class="path-n on">4</span><div><b>decide</b><span>before the window closes, citing the reports used</span></div></li>
+                </ol>
+              </div>
+            </div>
+            <!-- step 3 -->
+            <div class="fb hidden" data-i="2">
+              <div class="fb-text">
+                <div class="fb-tags"><span class="stamp" style="--r: -6deg; --stamp: #0d7a43">step 03</span><span class="tape" style="--r: 2deg; background-color: rgba(58, 232, 138, 0.8)">after-action review</span></div>
+                <h2>the review</h2>
+                <p>A shadow analyst with exactly the same reports shows, moment by moment, what a careful reader would have concluded. Where a read went wrong, the review says whether the reports or the reasoning let them down.</p>
+                <p class="hand fb-hand" style="color: #0d7a43">In practice: no more blaming a person for a message that never reached them.</p>
+              </div>
+              <div class="fb-panel">
+                <p class="fb-panel-label">what the review hands back</p>
+                <ul class="ticks">
+                  <li><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="34" height="34" rx="8"/><path d="M11 21 L18 28 L30 13"/></svg><div><b>Information gap or reasoning gap</b><span>for every moment of every read</span></div></li>
+                  <li><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="34" height="34" rx="8"/><path d="M11 21 L18 28 L30 13"/></svg><div><b>Were they as sure as they should be?</b><span>calibration and a Brier score per person</span></div></li>
+                  <li><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="34" height="34" rx="8"/><path d="M11 21 L18 28 L30 13"/></svg><div><b>See what they saw</b><span>replay any trainee's screen at any moment</span></div></li>
+                  <li><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="34" height="34" rx="8"/><path d="M11 21 L18 28 L30 13"/></svg><div><b>Take it with you</b><span>one offline HTML file, a PDF, or the raw JSON</span></div></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Roles: pick a badge to join ===================== -->
+    <section class="roles-section blueprint" id="roles">
+      <div class="wrap roles-grid">
+        <div class="roles-intro">
+          <p class="nb-label light"><b>situsim</b><i>/</i><strong>roles/</strong></p>
+          <h2 class="roles-title">4 roles,<br>one picture.</h2>
+          <p class="roles-lede">Each report goes to only some of you. Nobody has the whole story until the team puts it together. <span id="exerciseLine"></span></p>
+          <label class="name-field" for="name">
+            <span>your name</span>
+            <input type="text" id="name" maxlength="40" placeholder="e.g. Capt. Mehra" autocomplete="off">
+          </label>
+          <p class="hand roles-hand">then grab a badge →</p>
+        </div>
+        <div class="lanyards" id="roleCards"></div>
+      </div>
+    </section>
+
+    <!-- ===================== Past reviews ===================== -->
+    <section class="reviews" id="reviews">
+      <div class="wrap">
+        <p class="nb-label"><b>situsim</b><i>/</i><strong>reviews/</strong></p>
+        <div class="reviews-head">
+          <h2>review history.</h2>
+          <p class="muted">Every exercise leaves an append-only event log. Each review is rebuilt from that log alone, newest first.</p>
+        </div>
+        <div class="reviews-grid">
+          <ol class="commits" id="sessions"></ol>
+          <aside class="postit devices" style="--r: 2deg; --bg: #ff8fb1">
+            <span class="pin" aria-hidden="true"></span>
+            <p>other devices? on the same Wi-Fi or hotspot, open</p>
+            <p class="join-url" id="joinUrl"></p>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="perforation" aria-hidden="true"></div>
+    <div class="wrap foot-row">
+      <a class="brand" href="/">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#141414"/><circle cx="9.5" cy="16" r="4.2" fill="#faf6ea"/><circle cx="18" cy="16" r="2.8" fill="#ff5a1f"/><circle cx="24.6" cy="16" r="1.9" fill="#ff5a1f" opacity="0.5"/></svg>
+        SituSim
+      </a>
+      <p class="foot-note" id="disclaimer"></p>
+      <a class="foot-link" href="/instructor">Instructor console</a>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/static/netgraph.js"></script>
+  <script src="/static/home.js"></script>
+</body>
+</html>

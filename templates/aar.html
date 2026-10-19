@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>After-Action Review, {{ r.scenario.name }}</title>
+  {% if standalone %}
+  <style>{{ inline["style.css"] | safe }}</style>
+  <style>{{ inline["aar.css"] | safe }}</style>
+  {% else %}
+  <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/aar.css">
+  {% endif %}
+</head>
+<body>
+{% set tl_ids = r.timeline | map(attribute='event_id') | list %}
+{% macro cites(ids) -%}
+  {% if ids %}<span class="cites">[{% for id in ids %}{% if id in tl_ids %}<a href="#e{{ id }}">E{{ id }}</a>{% else %}E{{ id }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}]</span>{% endif %}
+{%- endmacro %}
+{% macro score_dot(s) -%}
+  {% if s is none %}<span class="sc na">N/A</span>{% elif s == 2 %}<span class="sc s2">2</span>{% elif s == 1 %}<span class="sc s1">1</span>{% else %}<span class="sc s0">0</span>{% endif %}
+{%- endmacro %}
+{% set s = r.sense %}
+{% set gap_order = ["sound", "info", "reasoning", "lucky"] %}
+
+  <header class="topbar no-print">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#141414"/><circle cx="9.5" cy="16" r="4.2" fill="#faf6ea"/><circle cx="18" cy="16" r="2.8" fill="#ff5a1f"/><circle cx="24.6" cy="16" r="1.9" fill="#ff5a1f" opacity="0.5"/></svg>
+      SituSim
+    </a>
+    <span class="context">After-Action Review</span>
+    <span class="spacer"></span>
+    {% if not standalone %}
+    <a class="btn quiet" href="/aar/{{ r.session_id }}/download">Download review</a>
+    <button class="btn quiet" type="button" onclick="window.print()">Save as PDF</button>
+    <a class="btn ghost" href="/aar/{{ r.session_id }}/json">JSON data</a>
+    <a class="btn" href="/instructor">Instructor console</a>
+    {% else %}
+    <button class="btn quiet" type="button" onclick="window.print()">Save as PDF</button>
+    {% endif %}
+  </header>
+
+  <main class="doc">
+    <section class="cover">
+      <p class="kicker">session {{ r.session_id }}</p>
+      <span class="stamp cover-stamp" style="--r: -8deg{% if not live %}; --stamp: #0d7a43{% endif %}">{% if live %}in progress{% else %}reviewed{% endif %}</span>
+      <h1>{{ r.scenario.name }}</h1>
+      <p class="area">{{ r.scenario.area }}</p>
+      <dl class="facts">
+        <div><dt>Length</dt><dd class="data">{{ r.end_time[2:] }}</dd></div>
+        <div><dt>Difficulty</dt><dd>{{ r.config.difficulty | title }}</dd></div>
+        <div><dt>Seed</dt><dd class="data">{{ r.config.seed }}</dd></div>
+        <div><dt>Decisions</dt><dd class="data">{{ r.decision_count }}</dd></div>
+        <div><dt>Average rubric</dt><dd class="data">{% if r.average_score is none %}N/A{% else %}{{ r.average_score }}%{% endif %}</dd></div>
+        <div><dt>Messages lost</dt><dd class="data">{{ r.comms.dropped }} of {{ r.comms.copies }}</dd></div>
+        <div><dt>Located</dt><dd class="data">{{ r.emissions.located }}</dd></div>
+      </dl>
+      {% if live %}<p class="live-note no-print">The exercise is still running. This review shows everything up to now. Reload to update it.</p>{% endif %}
+      {% if not r.started %}<p class="live-note">This session has not been started yet, so there is nothing to review.</p>{% endif %}
+    </section>
+
+    <section class="block">
+      <h2>Summary</h2>
+      <ul class="summary">
+        {% for item in r.summary %}<li>{{ item.text }} {{ cites(item.events) }}</li>{% endfor %}
+      </ul>
+      <div class="ai" id="aiBox">
+        {% if llm %}
+          <button class="btn quiet small no-print" type="button" id="aiButton" data-session="{{ r.session_id }}">Draft a narrative summary with AI ({{ llm }})</button>
+        {% elif not standalone %}
+          <p class="small muted no-print">The AI narrative summary is off. Set an API key to turn it on (see the README). The summary above is built from the event log only.</p>
+        {% endif %}
+        <div id="aiResult"></div>
+      </div>
+    </section>
+
+    <!-- ===================== The picture over time ===================== -->
+    <section class="block picture">
+      <h2>The picture over time</h2>
+      <p class="intro">Each trainee kept a live read on the key questions. The <span class="k-read">solid line</span> is their read,
+        the <span class="k-shadow">dashed line</span> is what a careful reader with exactly their reports would have concluded,
+        and the <span class="k-truth">grey step</span> is the truth. The strip underneath says whose problem each moment was.</p>
+
+      {% if s.any_reads %}
+      <div class="gapbar" role="img" aria-label="Team: sound {{ s.team_share_set.sound }}%, information gap {{ s.team_share_set.info }}%, reasoning gap {{ s.team_share_set.reasoning }}%, ahead of the evidence {{ s.team_share_set.lucky }}%">
+        {% for key in gap_order %}{% if s.team_share_set[key] > 0 %}<span class="g-{{ key }}" style="flex-grow: {{ s.team_share_set[key] }}"><b>{{ s.team_share_set[key] }}%</b> {{ s.gap_names[key] }}</span>{% endif %}{% endfor %}
+      </div>
+      <dl class="gap-key">
+        <div><dt><i class="g-sound"></i>Sound read</dt><dd>Right, and the reports supported it.</dd></div>
+        <div><dt><i class="g-info"></i>Information gap</dt><dd>Wrong, but so were the reports. The fix is in the comms, not the person.</dd></div>
+        <div><dt><i class="g-reasoning"></i>Reasoning gap</dt><dd>The reports pointed the right way and the read didn't follow.</dd></div>
+        <div><dt><i class="g-lucky"></i>Ahead of the evidence</dt><dd>Right, although the reports pointed the other way. Luck or instinct.</dd></div>
+      </dl>
+
+      <div class="multiples" style="--cols: {{ s.questions | length }}">
+        <div class="mh"></div>
+        {% for q in s.questions %}<div class="mh qh">{{ q.short }}</div>{% endfor %}
+        {% for p in s.pictures %}
+          <div class="rh">
+            <strong>{{ p.title }}</strong>
+            {% for rs in s.role_share %}{% if rs.role == p.role %}
+            <span class="mini-share" title="Sound {{ rs.share.sound }}%, information gap {{ rs.share.info }}%, reasoning gap {{ rs.share.reasoning }}%, ahead {{ rs.share.lucky }}%, no read {{ rs.share.unset }}%">
+              {% for key in gap_order + ["unset"] %}{% if rs.share[key] > 0 %}<i class="g-{{ key }}" style="flex-grow: {{ rs.share[key] }}"></i>{% endif %}{% endfor %}
+            </span>
+            <span class="small muted">{{ rs.share.reasoning }}% reasoning gap</span>
+            {% endif %}{% endfor %}
+          </div>
+          {% for panel in p.panels %}
+          <figure class="mini" data-role="{{ p.role }}" data-q="{{ panel.q_id }}">
+            <svg viewBox="0 0 {{ s.chart.w }} {{ s.chart.h + 12 }}" role="img" aria-label="{{ p.title }}, {{ panel.short }}: final read {{ panel.final_read if panel.final_read is not none else 'never set' }}">
+              <line class="mid" x1="0" x2="{{ s.chart.w }}" y1="{{ 6 + (s.chart.h - 12) / 2 }}" y2="{{ 6 + (s.chart.h - 12) / 2 }}"/>
+              <polyline class="truth" points="{{ panel.truth_points }}"/>
+              <polyline class="shadow" points="{{ panel.shadow_points }}"/>
+              {% if panel.read_path %}<path class="read" d="{{ panel.read_path }}"/>{% endif %}
+              {% for d in panel.dots %}<circle class="read-dot" cx="{{ d.x }}" cy="{{ d.y }}" r="2.6"><title>{{ d.t }}: read set to {{ d.value }}%</title></circle>{% endfor %}
+              {% for seg in panel.strip %}<rect class="strip g-{{ seg.cat }}" x="{{ seg.x }}" y="{{ s.chart.h + 3 }}" width="{{ seg.w }}" height="7"><title>{{ seg.label }}</title></rect>{% endfor %}
+              <line class="cross hidden" x1="0" x2="0" y1="0" y2="{{ s.chart.h + 10 }}"/>
+            </svg>
+            {% if not panel.has_read %}<figcaption class="no-read">No read was ever set</figcaption>{% endif %}
+          </figure>
+          {% endfor %}
+        {% endfor %}
+        <div class="mh"></div>
+        {% for q in s.questions %}<div class="axis">{% for t in s.chart.ticks %}<span style="left: {{ (t.x / s.chart.w * 100) | round(2) }}%">{{ t.label }}</span>{% endfor %}</div>{% endfor %}
+      </div>
+      <div class="tip hidden" id="tip" role="status"></div>
+      {% else %}
+      <p class="empty">Nobody set a read during this session, so there is no picture to show. Ask trainees to keep their read on each key question up to date.</p>
+      {% endif %}
+
+      {% if s.any_reads %}
+      <details class="responses">
+        <summary>How each read responded to strong evidence</summary>
+        <table class="plain">
+          <thead><tr><th>Trainee</th><th>Question</th><th>Report</th><th>Reached them</th><th>Pointed to</th><th>What happened</th></tr></thead>
+          <tbody>
+          {% for p in s.pictures %}{% for panel in p.panels %}{% for res in panel.responses %}
+            <tr class="{% if res.ok == false %}bad{% endif %}"><td>{{ p.title }}</td><td>{{ panel.short }}</td><td><strong>{{ res.report_id }}</strong></td><td class="data">{{ res.at }}</td><td>{{ res.direction }}</td><td>{{ res.result }}</td></tr>
+          {% endfor %}{% endfor %}{% endfor %}
+          </tbody>
+        </table>
+      </details>
+      {% endif %}
+    </section>
+
+    <!-- ===================== Calibration ===================== -->
+    {% set c = s.calibration %}
+    {% if c.samples > 0 %}
+    <section class="block calibration">
+      <h2>Were they as sure as they should have been?</h2>
+      <div class="cal-grid">
+        <figure class="cal-chart">
+          <svg viewBox="0 0 {{ c.chart.w }} {{ c.chart.h }}" role="img" aria-label="Calibration: how often reads were right at each level of confidence">
+            <line class="diag" x1="{{ c.chart.diag[0] }}" y1="{{ c.chart.diag[1] }}" x2="{{ c.chart.diag[2] }}" y2="{{ c.chart.diag[3] }}"/>
+            <line class="axis-line" x1="30" y1="{{ c.chart.h - 30 }}" x2="{{ c.chart.w - 10 }}" y2="{{ c.chart.h - 30 }}"/>
+            <line class="axis-line" x1="30" y1="10" x2="30" y2="{{ c.chart.h - 30 }}"/>
+            <text class="ax" x="30" y="{{ c.chart.h - 14 }}">50%</text>
+            <text class="ax" x="{{ c.chart.w - 10 }}" y="{{ c.chart.h - 14 }}" text-anchor="end">100%</text>
+            <text class="ax" x="{{ (c.chart.w + 20) / 2 }}" y="{{ c.chart.h - 2 }}" text-anchor="middle">How sure they were</text>
+            <text class="ax" x="24" y="14" text-anchor="end">100%</text>
+            <text class="ax" x="24" y="{{ c.chart.h - 30 }}" text-anchor="end">0%</text>
+            <text class="ax" x="{{ c.chart.w - 14 }}" y="24" text-anchor="end">Perfectly calibrated</text>
+            {% for b in c.buckets %}{% if b.rate is not none %}
+              <circle class="cal-dot" cx="{{ b.x }}" cy="{{ b.y }}" r="{{ b.r }}"><title>{{ b.label }} sure: right {{ b.rate }}% of the time ({{ b.n }} samples)</title></circle>
+            {% endif %}{% endfor %}
+          </svg>
+          <figcaption class="small muted">Dots below the diagonal mean overconfidence. Dot size shows how many moments fall in that band.</figcaption>
+        </figure>
+        <div>
+          <p class="big-line">The team's Brier score was <strong class="data">{{ c.brier }}</strong>. A careful reader with the same reports would have scored <strong class="data">{{ c.shadow_brier }}</strong>. Lower is better; 0.25 is what always answering "50%" earns.</p>
+          <table class="plain">
+            <thead><tr><th>Trainee</th><th>How sure, on average</th><th>How often right</th><th>Gap</th><th>Brier</th></tr></thead>
+            <tbody>
+            {% for row in c.roles %}
+              <tr><th>{{ row.title }}</th><td class="data">{{ row.confidence }}%</td><td class="data">{{ row.hit }}%</td>
+                <td class="data {% if row.gap is not none and row.gap > 10 %}warn{% endif %}">{% if row.gap is not none %}{% if row.gap > 0 %}+{% endif %}{{ row.gap }}{% endif %}</td><td class="data">{{ row.brier }}</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <p class="small muted">Feedback like this is how forecasters learn calibration: in a three-year forecasting tournament, an hour of probability training halved overconfidence (Moore et al.).</p>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ===================== 1. What was supposed to happen ===================== -->
+    <section class="block">
+      <h2>1. What was supposed to happen</h2>
+      <div class="two-col">
+        <div>
+          <h3>Mission</h3>
+          <p>{{ r.scenario.mission }}</p>
+          <h3>Commander's intent</h3>
+          <p>{{ r.scenario.intent }}</p>
+        </div>
+        <div>
+          <h3>Who played</h3>
+          <table class="plain">
+            <tbody>{% for p in r.participants %}<tr><th>{{ p.title }}</th><td>{{ p.names }}</td></tr>{% endfor %}</tbody>
+          </table>
+          <h3>Network at the start</h3>
+          <p class="small">Radio messages took {{ r.config.base_delay }} s plus up to {{ r.config.random_delay }} s more, and
+            {{ (r.config.drop_chance * 100) | round | int }}% were lost on a good link. The relay took {{ r.config.relay_delay }} s and a runner {{ r.config.runner_delay }} s.
+            {% if r.config_changes %}The instructor changed settings {{ r.config_changes }} time(s) during the session.{% endif %}
+            {% if r.director.used %}The Fog Director adjusted the fog automatically.{% endif %}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 2. What happened ===================== -->
+    <section class="block">
+      <h2>2. What happened</h2>
+      <div class="stats">
+        <div><span class="big data">{{ r.comms.copies }}</span><span>message copies sent</span></div>
+        <div><span class="big data">{{ r.comms.delivered }}</span><span>arrived</span></div>
+        <div><span class="big data">{{ r.comms.delayed }}</span><span>arrived late</span></div>
+        <div><span class="big data">{{ r.comms.dropped }}</span><span>lost</span></div>
+        <div><span class="big data">{{ r.comms.held }}</span><span>held by outages</span></div>
+        <div><span class="big data">{{ r.comms.synthetic }}</span><span>contradictions added</span></div>
+      </div>
+
+      {% if r.replay2 %}
+      <div class="player no-print" id="player">
+        <div class="player-head">
+          <h3>See what they saw</h3>
+          <div class="seg" id="playerRoles" role="tablist"></div>
+        </div>
+        <div class="player-controls">
+          <button class="btn signal small" type="button" id="playBtn">Play</button>
+          <input type="range" id="playTime" min="0" max="{{ r.replay2.end }}" value="0" aria-label="Moment in the exercise">
+          <span class="data play-clock" id="playClock">T+00:00</span>
+          <span class="seg" id="playSpeed">
+            <button type="button" data-speed="1">1×</button>
+            <button type="button" data-speed="5">5×</button>
+            <button type="button" class="on" data-speed="20">20×</button>
+            <button type="button" data-speed="60">60×</button>
+          </span>
+        </div>
+        <div class="player-view">
+          <div class="pv-reads" id="pvReads"></div>
+          <div class="pv-feed" id="pvFeed"></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <h3>The exercise for each role</h3>
+      {% set ch = r.chart %}
+      <div class="lanes-wrap">
+        <svg class="lanes" viewBox="0 0 {{ ch.width }} {{ ch.height }}" role="img" aria-label="Timeline for each role: link outages, reports received, reports lost and decisions">
+          <defs>
+            <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="6" stroke="#d1335a" stroke-width="2" stroke-opacity="0.45"/>
+            </pattern>
+          </defs>
+          {% for t in ch.ticks %}
+            <line class="tick" x1="{{ t.x }}" y1="24" x2="{{ t.x }}" y2="{{ ch.height - 4 }}"/>
+            <text class="tick-label" x="{{ t.x }}" y="16">{{ t.label }}</text>
+          {% endfor %}
+          {% for lane in ch.lanes %}
+            <text class="lane-label" x="0" y="{{ lane.mid + 4 }}">{{ lane.title }}</text>
+            {% for b in lane.bands %}<rect class="band {{ b.state }}" x="{{ b.x }}" y="{{ lane.y + 2 }}" width="{{ b.w }}" height="40"><title>{{ b.title }}</title></rect>{% endfor %}
+            <line class="lane-axis" x1="{{ ch.x0 }}" x2="{{ ch.x1 }}" y1="{{ lane.mid }}" y2="{{ lane.mid }}"/>
+            {% for w in lane.windows %}<rect class="window" x="{{ w.x }}" y="{{ lane.y + 38 }}" width="{{ w.w }}" height="4"/>{% endfor %}
+            {% for h in lane.held %}<line class="held" x1="{{ h.x }}" x2="{{ h.x + h.w }}" y1="{{ lane.mid }}" y2="{{ lane.mid }}"/>{% endfor %}
+            {% for d in lane.dots %}<circle class="dot {{ d.cls }}{% if d.conflict %} conflict{% endif %}" cx="{{ d.x }}" cy="{{ lane.mid }}" r="5"><title>{{ d.title }}</title></circle>{% endfor %}
+            {% for d in lane.drops %}<path class="drop" d="M{{ d.x - 4 }} {{ lane.mid - 4 }} L{{ d.x + 4 }} {{ lane.mid + 4 }} M{{ d.x - 4 }} {{ lane.mid + 4 }} L{{ d.x + 4 }} {{ lane.mid - 4 }}"><title>{{ d.title }}</title></path>{% endfor %}
+            {% for m in lane.marks %}
+              <path class="decision{% if m.missed %} missed{% endif %}" d="M{{ m.x }} {{ lane.mid - 9 }} L{{ m.x + 7 }} {{ lane.mid }} L{{ m.x }} {{ lane.mid + 9 }} L{{ m.x - 7 }} {{ lane.mid }} Z"><title>{{ m.title }}</title></path>
+              <text class="mark-label" x="{{ m.x }}" y="{{ lane.y + 6 }}">{{ m.label }}</text>
+            {% endfor %}
+          {% endfor %}
+        </svg>
+      </div>
+      <ul class="legend">
+        <li><svg width="14" height="14"><circle cx="7" cy="7" r="5" class="dot ok"/></svg>Report received in time</li>
+        <li><svg width="14" height="14"><circle cx="7" cy="7" r="5" class="dot late"/></svg>Received late</li>
+        <li><svg width="14" height="14"><circle cx="7" cy="7" r="5" class="dot ok conflict"/></svg>Part of a conflict</li>
+        <li><svg width="14" height="14"><circle cx="7" cy="7" r="5" class="dot ok team"/></svg>From a teammate</li>
+        <li><svg width="14" height="14"><path class="drop" d="M3 3 L11 11 M3 11 L11 3"/></svg>Lost in transit</li>
+        <li><svg width="14" height="14"><path class="decision" d="M7 1 L13 7 L7 13 L1 7 Z"/></svg>Decision</li>
+        <li><svg width="22" height="12"><rect class="band DEGRADED" x="0" y="0" width="22" height="12"/></svg>Radio degraded</li>
+        <li><svg width="22" height="12"><rect class="band DOWN key" x="0" y="0" width="22" height="12"/></svg>Radio down</li>
+        <li><svg width="22" height="12"><rect class="window" x="0" y="4" width="22" height="4"/></svg>Decision window</li>
+      </ul>
+
+      <h3>Which report reached whom, and when</h3>
+      <div class="table-wrap">
+        <table class="matrix">
+          <thead><tr><th>Report</th>{% for p in r.participants %}<th>{{ p.title }}</th>{% endfor %}</tr></thead>
+          <tbody>
+          {% for row in r.matrix %}
+            <tr>
+              <td class="rep">
+                <strong>{{ row.report_id }}</strong> <span class="muted small">{{ row.sender }}, observed {{ row.source }}</span>
+                <span class="rtext">{{ row.text }}</span>
+                <span class="tags">
+                  {% if row.truth == true %}<span class="tag ok">True</span>{% elif row.truth == false %}<span class="tag bad">False</span>{% endif %}
+                  {% if row.critical %}<span class="tag signal">Critical</span>{% endif %}
+                  {% if row.synthetic %}<span class="tag">Added contradiction</span>{% endif %}
+                  {% if row.created_by == 'instructor' %}<span class="tag">Instructor inject</span>{% endif %}
+                </span>
+              </td>
+              {% for cell in row.cells %}<td><span class="mcell {{ cell.cls }}" title="{{ cell.title }}">{% if cell.cls == 'none' %}Not sent{% else %}{{ cell.text }}{% if cell.detail %}<small>{{ cell.detail }}</small>{% endif %}{% endif %}</span></td>{% endfor %}
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="muted">No reports were sent.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Timeline</h3>
+      <div class="seg filters no-print" id="filters">
+        <button type="button" class="on" data-cat="all">Everything</button>
+        <button type="button" data-cat="disruption">Disruptions</button>
+        <button type="button" data-cat="report">Reports</button>
+        <button type="button" data-cat="read">Reads and grades</button>
+        <button type="button" data-cat="decision">Decisions</button>
+        <button type="button" data-cat="team">Team traffic</button>
+        <button type="button" data-cat="probe">Probes</button>
+      </div>
+      <ol class="timeline" id="timeline">
+        {% for row in r.timeline %}
+          <li id="e{{ row.event_id }}" data-cat="{{ row.cat }}" class="{{ row.cat }}">
+            <span class="t data">{{ row.t }}</span><span class="what">{{ row.text }}</span><span class="eid">E{{ row.event_id }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    <!-- ===================== 3. Why it happened ===================== -->
+    <section class="block">
+      <h2>3. Why it happened</h2>
+      {% if r.findings %}
+        <h3>Key findings from the log</h3>
+        <ul class="findings">{% for f in r.findings %}<li class="f-{{ f.kind }}">{{ f.text }} {{ cites(f.events) }}</li>{% endfor %}</ul>
+      {% else %}
+        <p class="muted">No notable gaps, outages or conflicts were recorded.</p>
+      {% endif %}
+
+      <h3>Every decision, judged against what that person could see</h3>
+      <p class="small muted">Each dimension scores 0 to 2. N/A means it didn't apply. A choice that turned out right by luck while ignoring visible information scores lower than a sound choice that turned out wrong.</p>
+      {% for card in r.cards %}
+        <article class="card{% if card.missed %} missed{% endif %}" id="e{{ card.event_id }}-card">
+          <header>
+            <div>
+              <span class="dp">{{ card.dp_id }}</span>
+              <span class="role">{{ card.title }}{% if card.name %} ({{ card.name }}){% endif %}</span>
+              {% if card.team %}<span class="tag signal">Team decision</span>{% endif %}
+              <p class="prompt">{{ card.prompt }}</p>
+            </div>
+            <div class="pct">{% if card.score.percent is none %}N/A{% else %}<span class="data">{{ card.score.percent }}%</span>{% endif %}<small>{{ card.score.total }} of {{ card.score.max }}</small></div>
+          </header>
+          <div class="card-body">
+            <div>
+              <p class="choice">{% if card.missed %}No decision made{% else %}Chose <strong>{{ card.choice }}</strong>{% endif %}</p>
+              <p class="small muted">At {{ card.time }}, {{ card.latency }} after the point opened (window {{ card.window }}){% if card.confidence and not card.missed %}. Confidence: {{ card.confidence | lower }}{% endif %}. {{ cites([card.event_id]) }}</p>
+              {% if card.rationale %}<blockquote>{{ card.rationale }}</blockquote>{% elif not card.missed %}<p class="small muted">No rationale recorded.</p>{% endif %}
+              {% if card.picture %}
+                <div class="dpic">
+                  <span class="dpic-q">{{ card.picture.short }} at that moment</span>
+                  <span class="dpic-track">
+                    <span class="dt truth" style="left: {{ 100 if card.picture.truth_yes else 0 }}%"></span>
+                    <span class="dt shadow" style="left: {{ card.picture.shadow }}%"></span>
+                    {% if card.picture.read is not none %}<span class="dt read" style="left: {{ card.picture.read }}%"></span>{% endif %}
+                  </span>
+                  <span class="dpic-text">Read {{ card.picture.read if card.picture.read is not none else "not set" }}{% if card.picture.read is not none %}%{% endif %}, reports supported {{ card.picture.shadow }}%, truth: {{ card.picture.truth | lower }}.
+                    <span class="tag g-{{ card.picture.category }}">{{ card.picture.category_name }}</span></span>
+                </div>
+              {% endif %}
+              {% if card.links %}<p class="small">Network at that moment: {{ card.links | join(', ') }}.</p>{% endif %}
+              <h4>What they could see ({{ card.visible | length }} reports)</h4>
+              <ul class="seen">
+                {% for v in card.visible %}{% if v.relevant or v.cited %}
+                  <li><strong>{{ v.report_id }}</strong> {% if v.cited %}<span class="tag">Cited</span>{% endif %}{% if v.truth == false %}<span class="tag bad">False</span>{% endif %} {{ v.text }} <span class="muted small">{{ v.age }} old</span></li>
+                {% endif %}{% endfor %}
+                {% set other = card.visible | rejectattr('relevant') | rejectattr('cited') | list %}
+                {% if other %}<li class="muted small">Plus {{ other | length }} other report(s) not tied to this decision.</li>{% endif %}
+                {% if not card.visible %}<li class="muted">Nothing had reached them.</li>{% endif %}
+              </ul>
+              {% if card.conflicts %}<p class="small"><span class="tag bad">Conflict in view</span> {% for p in card.conflicts %}{{ p[0] }} and {{ p[1] }}{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+              {% if card.missing %}
+                <h4>What they didn't have</h4>
+                <ul class="seen">{% for m in card.missing %}<li><strong>{{ m.report_id }}</strong> {{ m.text }} <span class="muted small">{{ m.where }}</span></li>{% endfor %}</ul>
+              {% endif %}
+            </div>
+            <table class="rubric">
+              <tbody>
+              {% for item in card.score["items"] %}
+                <tr><td>{{ score_dot(item.score) }}</td><th>{{ item.name }}</th></tr>
+                <tr class="why"><td></td><td>{{ item.why }}</td></tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      {% else %}
+        <p class="muted">No decisions were recorded.</p>
+      {% endfor %}
+
+      <h3>Talking versus staying hidden</h3>
+      <p class="small muted">Every radio message raised the sender's detectability; relayed messages raised the Comms Coordinator's. The shaded stretch is when enemy direction finding was active, and the line is where a role gets located.</p>
+      {% set em = r.emissions %}
+      <div class="em-grid">
+        {% for p in em.panels %}
+        <figure class="em">
+          <figcaption><strong>{{ p.title }}</strong> <span class="muted small">peak {{ p.peak }}</span></figcaption>
+          <svg viewBox="0 0 {{ em.chart.w }} {{ em.chart.h }}" role="img" aria-label="{{ p.title }} detectability over time, peak {{ p.peak }}">
+            {% for b in em.df_bands %}<rect class="df" x="{{ b.x }}" y="0" width="{{ b.w }}" height="{{ em.chart.h }}"/>{% endfor %}
+            <path class="em-area" d="{{ p.area }}"/>
+            <polyline class="em-line" points="{{ p.line }}"/>
+            <line class="em-threshold" x1="0" x2="{{ em.chart.w }}" y1="{{ p.threshold_y }}" y2="{{ p.threshold_y }}"/>
+            {% for l in p.located %}<g class="located"><line x1="{{ l.x }}" x2="{{ l.x }}" y1="0" y2="{{ em.chart.h }}"/><circle cx="{{ l.x }}" cy="{{ p.threshold_y }}" r="5"><title>Located at {{ l.t }}</title></circle></g>{% endfor %}
+          </svg>
+          <p class="channels small">{% for c in p.channel_list %}<span><b class="data">{{ c.n }}</b> {{ c.name | lower }}</span>{% endfor %}</p>
+        </figure>
+        {% endfor %}
+      </div>
+
+      {% if r.pace %}
+      <h3>Switching channels when a radio went down</h3>
+      <table class="plain">
+        <thead><tr><th>Who lost their radio</th><th>From</th><th>For</th><th>What the team did</th></tr></thead>
+        <tbody>
+        {% for p in r.pace %}
+          <tr class="{% if not p.ok %}bad{% endif %}"><td>{{ p.title }}{% if p.by_engine %} <span class="tag">located</span>{% endif %}</td><td class="data">{{ p.start }}</td><td>{{ p.length }}</td><td>{{ p.result }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+
+      {% if r.grading["items"] %}
+      <h3>How far they trusted their sources</h3>
+      <p class="small muted">Grades use the NATO source-grading system: a letter for how reliable the source is (A to F), a number for how believable the report is (1 to 6).</p>
+      <table class="plain">
+        <thead><tr><th>Trainee</th><th>Report</th><th>Source</th><th>Grade</th><th>Truth</th><th>Verdict</th></tr></thead>
+        <tbody>
+        {% for g in r.grading["items"] %}
+          <tr class="{% if g.ok == false %}bad{% endif %}"><td>{{ g.title }}</td><td><strong>{{ g.report_id }}</strong> <span class="muted small">{{ g.text }}</span></td><td>{{ g.sender }}</td><td class="data"><span class="grade">{{ g.grade }}</span></td><td>{% if g.truth == true %}<span class="tag ok">True</span>{% elif g.truth == false %}<span class="tag bad">False</span>{% endif %}</td><td>{{ g.verdict }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+
+      {% if r.director.used %}
+      <h3>What the Fog Director did</h3>
+      <ul class="director">
+        {% for d in r.director.steps %}{% if d.changed %}<li><span class="data">{{ d.t }}</span> {{ d.from }} to {{ d.to }}. {{ d.reason }}</li>{% endif %}{% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+
+    <!-- ===================== 4. How to improve ===================== -->
+    <section class="block">
+      <h2>4. How to improve</h2>
+      <div class="people-grid">
+        {% for p in r.roles %}
+          <article class="person{% if not p.played %} unplayed{% endif %}">
+            <header><h3>{{ p.title }}</h3><span class="muted small">{{ p.names }}</span></header>
+            <dl class="mini-facts">
+              <div><dt>Received</dt><dd class="data">{{ p.received }}</dd></div>
+              <div><dt>Late</dt><dd class="data">{{ p.delayed }}</dd></div>
+              <div><dt>Lost</dt><dd class="data">{{ p.dropped }}</dd></div>
+              <div><dt>Decisions</dt><dd class="data">{{ p.decisions }}{% if p.average is not none %}, {{ p.average }}%{% endif %}</dd></div>
+              <div><dt>Shared in time</dt><dd class="data">{{ p.shared }} of {{ p.opportunities }}</dd></div>
+              <div><dt>Probe answers</dt><dd class="data">{% if p.probe_total %}{{ p.probe_right }} of {{ p.probe_total }}{% else %}None{% endif %}</dd></div>
+            </dl>
+            {% if p.sustain %}<h4>Keep doing</h4><ul class="si sustain">{% for x in p.sustain %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+            {% if p.improve %}<h4>Work on</h4><ul class="si improve">{% for x in p.improve %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+            {% if not p.sustain and not p.improve %}<p class="muted small">Nothing recorded for this role.</p>{% endif %}
+          </article>
+        {% endfor %}
+      </div>
+
+      <h3>The team</h3>
+      <div class="two-col">
+        <div>
+          {% if r.team_sustain %}<h4>Keep doing</h4><ul class="si sustain">{% for x in r.team_sustain %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+          {% if r.team_improve %}<h4>Work on</h4><ul class="si improve">{% for x in r.team_improve %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+          {% for td in r.team_decisions %}
+            <h4>{{ td.dp_id }}: {{ td.prompt }}</h4>
+            <p class="small">Ground Team Lead's call: <strong>{{ td.lead_choice }}</strong>. {% for o in td.others %}{{ o.title }}: {{ o.choice }}{% if not loop.last %}; {% endif %}{% endfor %}.</p>
+          {% endfor %}
+        </div>
+        <div>
+          <h4>Did critical reports reach the people who needed them?</h4>
+          <table class="plain prop">
+            <thead><tr><th>Report</th><th>Needed by</th><th>Reached</th><th>Route</th></tr></thead>
+            <tbody>
+            {% for row in r.propagation %}
+              <tr class="{% if not row.ok %}bad{% endif %}"><td><strong>{{ row.report_id }}</strong></td><td>{{ row.role_title }}</td><td class="data">{{ row.reached }}{% if row.took %} <span class="muted small">after {{ row.took }}</span>{% endif %}</td><td>{{ row.route }}</td></tr>
+            {% else %}
+              <tr><td colspan="4" class="muted">No critical reports were sent.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% if r.probe_team %}
+            <h4>Shared picture in the freeze probes</h4>
+            <table class="plain">
+              <thead><tr><th>Question</th><th>Correct</th><th>Same answer</th></tr></thead>
+              <tbody>{% for q in r.probe_team %}<tr><td>{{ q.text }} <span class="muted small">{{ q.probe_id }}, level {{ q.level }}</span></td><td class="data">{{ q.correct }} of {{ q.total }}</td><td class="data">{{ q.shared }} of {{ q.total }}</td></tr>{% endfor %}</tbody>
+            </table>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <footer class="audit">
+      <p>Built only from the append-only event log: {{ r.event_count }} events in session {{ r.session_id }}. Delivery fingerprint {{ r.fingerprint }}; two runs with the same seed and the same actions produce the same fingerprint.</p>
+      <p>The shadow analyst is a transparent rule: each report's evidence, weighted by how reliable its source usually is and by how fresh it is, discounted when another report says the source is compromised. The rubric and the gap labels support the instructor's discussion; they don't replace it.</p>
+      <p>{{ r.scenario.disclaimer }}</p>
+    </footer>
+  </main>
+
+  <script id="replayData" type="application/json">{{ r.replay2 | tojson }}</script>
+  {% if standalone %}<script>{{ inline["aar.js"] | safe }}</script>{% else %}<script src="/static/aar.js"></script>{% endif %}
+</body>
+</html>
