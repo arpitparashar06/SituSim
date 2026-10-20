@@ -1,17 +1,17 @@
 # <p align="center"><img align="center" width="80" src="static/mark.svg"/> SituSim</p>
 <h2 align="center">Multi-Domain Decision-Making Trainer for Degraded Communication Environments</h2>
 <hr>
-<h2 align="center">TEAM [TEAM NAME] : Smart India Hackathon 2026 (SIH 2026) 🌟</h2>
-<img src="docs/screenshots/app.jpg"  width="100%"/>
+<h2 align="center">TEAM ALGOHOLIC1 : Smart India Hackathon 2026 (SIH 2026) 🌟</h2>
+<img src="docs/screenshots/home.png"  width="100%"/>
 <h2 align="center">COMPLETE DESCRIPTION</h2>
 
 ### PS ID : SIH26248
 
-### Team ID : [TEAM ID]
+### Team ID : 175991
 
-### Organisation : Ministry of Defence, Defence Services Staff College (DSSC)
+### Organisation : Ministry of Defence (MoD), Defence Services Staff College (DSSC)
 
-### Theme : [THEME]
+### Theme : Smart Automation
 
 ### Category : Software
 
@@ -54,11 +54,13 @@ We have implemented these features:
 
 | Trainee Screen | Instructor Console |
 |---|---|
-| <img src="docs/screenshots/trainee.jpg"/> | <img src="docs/screenshots/instructor.jpg"/> |
+| <img src="docs/screenshots/trainee.png"/> | <img src="docs/screenshots/instructor.png"/> |
 
 **After-Action Review**
 
-<img src="docs/screenshots/aar.jpg"  width="100%"/>
+| The Picture Over Time | See What They Saw |
+|---|---|
+| <img src="docs/screenshots/review-picture.png"/> | <img src="docs/screenshots/review-replay.png"/> |
 
 ### Tech Stacks Used :
 ⦿ <b>BackEnd :</b>
@@ -83,7 +85,7 @@ We have implemented these features:
 ### Important URLS :
 ⭐️ <b>SituSim Live Prototype :</b> [Click Here to Open]([RENDER URL])
 
-⭐️ <b>SIH Idea PPT :</b> [Click Here to View](docs/[PPT FILE].pdf)
+⭐️ <b>SIH Idea PPT :</b> [Click Here to View](docs/Algoholic1_26248_GarvBansal.pdf)
 
 ⭐️ <b>Youtube Video :</b> [Click Here to View]([YOUTUBE URL])
 
@@ -93,16 +95,21 @@ We have implemented these features:
 
 ## Project Created & Maintained By
 
-## :heart: Team [TEAM NAME]
-1. [Arpit Parashar](https://github.com/arpitparashar06)
-2. [NAME](https://github.com/USERNAME)
-3. [NAME](https://github.com/USERNAME)
-4. [NAME](https://github.com/USERNAME)
-5. [NAME](https://github.com/USERNAME)
-6. [NAME](https://github.com/USERNAME)
+## :heart: Team Algoholic1
+1. [Garv Bansal](https://github.com/garv-bansal)
+2. [Arpit Parashar](https://github.com/arpitparashar06)
+3. [Arpit Jain](https://github.com/arpitjain0214-pixel)
+4. [Bhavdeep Singh](https://github.com/Bit-wise-Bhavi)
+5. [Devanshi Yadav](https://github.com/Devanshi-Yadav20)
+6. [Manya Tyagi](https://github.com/manyaaaa-11)
 
 ### Hire Us
+<a href="https://www.linkedin.com/in/garvbansal2/"> <img src="https://img.shields.io/badge/garv-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Connect on LinkedIn"></a>
+<a href="https://www.linkedin.com/in/arpit-jain-8044a9365/"> <img src="https://img.shields.io/badge/arpit jain-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Connect on LinkedIn"></a>
 <a href="https://www.linkedin.com/in/arpit-parashar06/"> <img src="https://img.shields.io/badge/arpit parashar-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Connect on LinkedIn"></a>
+<a href="https://www.linkedin.com/in/bhavdeep-singh-55a06931a/"> <img src="https://img.shields.io/badge/bhavdeep-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Connect on LinkedIn"></a>
+<a href="https://www.linkedin.com/in/devanshi-yadav-26a4323a2/"> <img src="https://img.shields.io/badge/devanshi-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Connect on LinkedIn"></a>
+<a href="https://www.linkedin.com/in/manya-tyagi-a68352380/"> <img src="https://img.shields.io/badge/manya-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Connect on LinkedIn"></a>
 
 ### How-to-run
 
@@ -131,4 +138,4 @@ You are free to send us PRs and issues, We'd love to help and improve this.
 
 <h1 align="center">🙏 THANK YOU 🙏</h1>
 
-![Typing SVG](https://readme-typing-svg.demolab.com?font=Oldenburg&color=5B4FFF&lines=Best+Wishes+from+Team+[TEAM+NAME])
+![Typing SVG](https://readme-typing-svg.demolab.com?font=Oldenburg&color=5B4FFF&lines=Best+Wishes+from+Team+Algoholic1)
