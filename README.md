@@ -83,7 +83,7 @@ We have implemented these features:
 * [![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://render.com/)
 
 ### Important URLS :
-⭐️ <b>SituSim Live Prototype :</b> [Click Here to Open]([RENDER URL])
+⭐️ <b>SituSim Live Prototype :</b> [Click Here to Open](https://situsim.onrender.com/)
 
 ⭐️ <b>SIH Idea PPT :</b> [Click Here to View](docs/Algoholic1_26248_GarvBansal.pdf)
 
