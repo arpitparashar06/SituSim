@@ -87,7 +87,7 @@ We have implemented these features:
 
 ⭐️ <b>SIH Idea PPT :</b> [Click Here to View](docs/Algoholic1_26248_GarvBansal.pdf)
 
-⭐️ <b>Youtube Video :</b> [Click Here to View]([YOUTUBE URL])
+⭐️ <b>Youtube Video :</b> [Click Here to View](https://youtu.be/L_Ebmt_PE8Y?si=W7Gld0tYBklT3Ajn)
 
 ⭐️ <b>API Docs :</b> open http://localhost:8000/docs while the server is running
 
